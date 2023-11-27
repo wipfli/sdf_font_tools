@@ -105,7 +105,7 @@ pub fn glyph_range_for_face(
     // and https://www.freetype.org/freetype2/docs/tutorial/step1.html for details.
     face.set_char_size(0, (size << 6) as isize, 0, 0)?;
 
-    let the_file = fs::read_to_string("glyphs.json").expect("Unable to read file");
+    let the_file = fs::read_to_string("../glyphs.json").expect("Unable to read file");
     let json: HashMap<String, JsonGlyph> =
         serde_json::from_str(&the_file).expect("JSON was not well-formatted");
 
