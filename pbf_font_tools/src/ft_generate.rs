@@ -4,6 +4,23 @@ use sdf_glyph_renderer::{clamp_to_u8, render_sdf_from_face};
 
 use crate::error::PbfFontError;
 use crate::{freetype, Fontstack, Glyph, Glyphs};
+use std::fs;
+use serde::Deserialize;
+use std::collections::HashMap;
+
+
+#[derive(Debug, Deserialize)]
+struct JsonGlyph {
+    data: Vec<u32>,
+    width: u32,
+    height: u32,
+    glyphWidth: u32,
+    glyphHeight: u32,
+    glyphTop: u32,
+    glyphLeft: u32,
+    glyphAdvance: f32,
+    segment: String,
+}
 
 /// Renders a single glyph for the given font face into a Glyph message.
 pub fn render_sdf_glyph(
@@ -12,17 +29,34 @@ pub fn render_sdf_glyph(
     buffer: usize,
     radius: usize,
     cutoff: f64,
+    json: &HashMap<String, JsonGlyph>,
 ) -> Result<Glyph, PbfFontError> {
-    let glyph = render_sdf_from_face(face, char_code, buffer, radius)?;
 
+    
+
+    if 57344 <= char_code && char_code < 57344 + 10  {
+        println!("hi");
+        println!("{} {}", char_code.to_string(), json[&char_code.to_string()].segment);
+
+        //let glyph= &json[char_code.to_string()];
+        
+        //result.set_bitmap(glyph["data"]);
+
+        // json.find_path(&["5", "glyphWidth"]).unwrap();
+        // result.set_width(to_u32(glyph["glyphWidth"]));
+        // result.set_height(serde_json::from_value(glyph["glyphHeight"]).unwrap());
+        // result.set_left(serde_json::from_value(glyph["glyphLeft"]).unwrap());
+        // result.set_top(serde_json::from_value(glyph["glyphTop"]).unwrap());
+        // result.set_advance(serde_json::from_value(glyph["glyphAdvance"]).unwrap());
+    }
+    else {
+
+        // let glyph = render_sdf_from_face(face, char_code, buffer, radius)?;
+
+
+    }
     let mut result = Glyph::new();
     result.set_id(char_code);
-    result.set_bitmap(clamp_to_u8(&glyph.sdf, cutoff)?);
-    result.set_width(glyph.metrics.width as u32);
-    result.set_height(glyph.metrics.height as u32);
-    result.set_left(glyph.metrics.left_bearing);
-    result.set_top(glyph.metrics.top_bearing - glyph.metrics.ascender);
-    result.set_advance(glyph.metrics.h_advance);
 
     Ok(result)
 }
@@ -66,8 +100,14 @@ pub fn glyph_range_for_face(
     // and https://www.freetype.org/freetype2/docs/tutorial/step1.html for details.
     face.set_char_size(0, (size << 6) as isize, 0, 0)?;
 
+    let the_file = fs::read_to_string("glyphs.json").expect("Unable to read file");
+    let json: HashMap<String, JsonGlyph> =
+        serde_json::from_str(&the_file).expect("JSON was not well-formatted");
+
+    println!("hello");
+    println!("{}", json["57344"].segment);
     for char_code in start..=end {
-        match render_sdf_glyph(face, char_code, 3, radius, cutoff) {
+        match render_sdf_glyph(face, char_code, 3, radius, cutoff, &json) {
             Ok(glyph) => {
                 stack.glyphs.push(glyph);
             }

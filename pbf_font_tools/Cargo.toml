@@ -20,6 +20,8 @@ protobuf.workspace = true
 sdf_glyph_renderer = { workspace = true, optional = true }
 thiserror.workspace = true
 tokio.workspace = true
+serde_json = "1.0.100"
+serde = {version="1.0", features = ["derive"]}
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["fs", "io-util", "macros"] }
