@@ -11,13 +11,13 @@ use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct JsonGlyph {
-    data: Vec<u32>,
+    data: Vec<u8>,
     width: u32,
     height: u32,
     glyphWidth: u32,
     glyphHeight: u32,
-    glyphTop: u32,
-    glyphLeft: u32,
+    glyphTop: i32,
+    glyphLeft: i32,
     glyphAdvance: f32,
     segment: String,
 }
@@ -33,30 +33,35 @@ pub fn render_sdf_glyph(
 ) -> Result<Glyph, PbfFontError> {
 
     
+    let mut result = Glyph::new();
+    result.set_id(char_code);
 
-    if 57344 <= char_code && char_code < 57344 + 10  {
+    if json.contains_key(&(char_code).to_string())  {
+        let jsonGlyph: &JsonGlyph = &json[&(char_code).to_string()];
+
         println!("hi");
-        println!("{} {}", char_code.to_string(), json[&char_code.to_string()].segment);
-
-        //let glyph= &json[char_code.to_string()];
+        println!("{} {}", char_code.to_string(), jsonGlyph.segment);
         
-        //result.set_bitmap(glyph["data"]);
-
-        // json.find_path(&["5", "glyphWidth"]).unwrap();
-        // result.set_width(to_u32(glyph["glyphWidth"]));
-        // result.set_height(serde_json::from_value(glyph["glyphHeight"]).unwrap());
-        // result.set_left(serde_json::from_value(glyph["glyphLeft"]).unwrap());
-        // result.set_top(serde_json::from_value(glyph["glyphTop"]).unwrap());
-        // result.set_advance(serde_json::from_value(glyph["glyphAdvance"]).unwrap());
+        result.set_bitmap(jsonGlyph.data.clone());
+        result.set_width(jsonGlyph.glyphWidth);
+        result.set_height(jsonGlyph.glyphHeight);
+        result.set_left(jsonGlyph.glyphLeft);
+        result.set_top(-(jsonGlyph.height as i32) + (jsonGlyph.glyphHeight as i32));
+        result.set_advance(jsonGlyph.glyphAdvance.round() as u32);
     }
     else {
 
-        // let glyph = render_sdf_from_face(face, char_code, buffer, radius)?;
+        let glyph = render_sdf_from_face(face, char_code, buffer, radius)?;
 
+        result.set_bitmap(clamp_to_u8(&glyph.sdf, cutoff)?);
+        result.set_width(glyph.metrics.width as u32);
+        result.set_height(glyph.metrics.height as u32);
+        result.set_left(glyph.metrics.left_bearing);
+        result.set_top(glyph.metrics.top_bearing - glyph.metrics.ascender);
+        result.set_advance(glyph.metrics.h_advance);
 
     }
-    let mut result = Glyph::new();
-    result.set_id(char_code);
+    
 
     Ok(result)
 }
@@ -104,8 +109,6 @@ pub fn glyph_range_for_face(
     let json: HashMap<String, JsonGlyph> =
         serde_json::from_str(&the_file).expect("JSON was not well-formatted");
 
-    println!("hello");
-    println!("{}", json["57344"].segment);
     for char_code in start..=end {
         match render_sdf_glyph(face, char_code, 3, radius, cutoff, &json) {
             Ok(glyph) => {
