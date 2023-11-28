@@ -42,11 +42,12 @@ pub fn render_sdf_glyph(
         println!("hi");
         println!("{} {}", char_code.to_string(), jsonGlyph.segment);
         
+        let top_adujstment = 27; // See MapLibre GL JS glyph_manager.ts
         result.set_bitmap(jsonGlyph.data.clone());
         result.set_width(jsonGlyph.glyphWidth);
         result.set_height(jsonGlyph.glyphHeight);
         result.set_left(jsonGlyph.glyphLeft);
-        result.set_top(-(jsonGlyph.height as i32) + (jsonGlyph.glyphHeight as i32));
+        result.set_top(jsonGlyph.glyphTop - top_adujstment);
         result.set_advance(jsonGlyph.glyphAdvance.round() as u32);
     }
     else {
